@@ -1,7 +1,7 @@
 import sys
 
 
-def is_safe(numbers):
+def is_safe(numbers) -> bool:
     up_or_down = None
 
     for a, b in zip(numbers, numbers[1:]):

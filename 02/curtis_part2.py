@@ -1,13 +1,13 @@
 import sys
 
 
-def remove_at(list_: list[int], index: int):
+def remove_at(list_: list[int], index: int) -> list[int]:
     c = list_.copy()
     c.pop(index)
     return c
 
 
-def is_safe(numbers):
+def is_safe(numbers) -> bool:
     up_or_down = None
 
     for a, b in zip(numbers, numbers[1:]):
@@ -24,7 +24,7 @@ def is_safe(numbers):
     return True
 
 
-def is_safe_any(numbers):
+def is_safe_any(numbers) -> bool:
     if is_safe(numbers):
         return True
     for i in range(len(numbers)):
