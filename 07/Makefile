@@ -1,3 +1,3 @@
-all: main.cpp main2.cpp
-	g++ -g -o main1 main.cpp
-	g++ -g -o main2 main2.cpp
+all:
+	g++ -g -o curtis_part1.main curtis_part1.cpp
+	g++ -g -o curtis_part2.main curtis_part2.cpp

@@ -11,18 +11,6 @@ using std::vector;
 
 enum ops { ADD, MUL, CAT };
 
-long long pow10(int exp) {
-    assert(exp >= 0);
-    if (exp == 0) {
-        return 1;
-    }
-    long long acc = 1;
-    while (exp-->0) {
-        acc *= 10;
-    }
-    return acc;
-}
-
 long long evaluate(const vector<long long> &nums, const vector<ops> &operators) {
     long long acc = nums.at(0);
     auto current_num = nums.begin();
@@ -98,13 +86,8 @@ bool works(const vector<long long> &nums, long long value) {
     return false;
 }
 
-/*
-* Tried values:
-* 563590806965177 (too low)
-* 581941094529163 (correct)
-*/
 int main (int argc, char *argv[]) {
-    std::ifstream input("./input.txt");
+    std::ifstream input(argv[1]);
     std::string s;
 
     vector<vector<long long>> numbers;
@@ -126,16 +109,12 @@ int main (int argc, char *argv[]) {
     }
 
     long long acc = 0;
-    int total_work = 0;
     for (size_t x = 0; x < numbers.size(); ++x) {
         if (works(numbers.at(x), values.at(x))) {
-            printf("%3zu = %14lld works!\n", x, values.at(x));
             acc += values.at(x);
-            ++total_work;
         }
     }
 
-    std::printf("Total working: %d!\n", total_work);
     std::printf("Solution: %lld!\n", acc);
 
     return 0;

@@ -70,7 +70,7 @@ bool works(vector<long long> nums, long long value) {
 }
 
 int main (int argc, char *argv[]) {
-    std::ifstream input("./input.txt");
+    std::ifstream input(argv[1]);
     std::string s;
 
     vector<vector<long long>> numbers;
@@ -90,16 +90,12 @@ int main (int argc, char *argv[]) {
     }
 
     long long acc = 0;
-    int total_work = 0;
     for (size_t x = 0; x < numbers.size(); ++x) {
         if (works(numbers.at(x), values.at(x))) {
-            printf("%3zu = %14lld works!\n", x, values.at(x));
             acc += values.at(x);
-            ++total_work;
         }
     }
 
-    std::printf("Total working: %d!\n", total_work);
     std::printf("Solution: %lld!\n", acc);
 
     return 0;
