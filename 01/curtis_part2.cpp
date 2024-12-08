@@ -1,5 +1,3 @@
-#include <cassert>
-#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -10,8 +8,7 @@ int main (int argc, char *argv[]) {
     unsigned int contained[100000] {}, index;
 
     while (ifs) {
-        llist.push_back(0);
-        ifs >> llist.back();
+        ifs >> llist.emplace_back();
         ifs >> index;
         ++contained[index];
     }

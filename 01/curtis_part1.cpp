@@ -1,6 +1,4 @@
 #include <algorithm>
-#include <cassert>
-#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -10,10 +8,8 @@ int main (int argc, char *argv[]) {
     std::vector<int> llist, rlist;
 
     while (ifs) {
-        llist.push_back(0);
-        rlist.push_back(0);
-        ifs >> llist.back();
-        ifs >> rlist.back();
+        ifs >> llist.emplace_back();
+        ifs >> rlist.emplace_back();
     }
 
     std::sort(llist.begin(), llist.end());
