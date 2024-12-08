@@ -10,9 +10,9 @@
 using std::vector;
 
 bool works(
-    const vector<long long>::reverse_iterator &start,
-    const vector<long long>::reverse_iterator &end,
-    long long value
+    const vector<long>::reverse_iterator &start,
+    const vector<long>::reverse_iterator &end,
+    long value
 ) {
     if (std::distance(start, end) == 1) {
         return *start == value;
@@ -34,8 +34,8 @@ int main (int argc, char *argv[]) {
     std::ifstream input(argv[1]);
     std::string s;
 
-    vector<vector<long long>> numbers;
-    vector<long long> values;
+    vector<vector<long>> numbers;
+    vector<long> values;
 
     while (std::getline(input, s)) {
         std::stringstream stream(s);
@@ -50,14 +50,14 @@ int main (int argc, char *argv[]) {
         numbers.back().pop_back();
     }
 
-    long long acc = 0;
+    long acc = 0;
     for (size_t x = 0; x < numbers.size(); ++x) {
         if (works(numbers.at(x).rbegin(), numbers.at(x).rend(), values.at(x))) {
             acc += values.at(x);
         }
     }
 
-    std::printf("Solution: %lld!\n", acc);
+    std::printf("Solution: %ld!\n", acc);
 
     return 0;
 }

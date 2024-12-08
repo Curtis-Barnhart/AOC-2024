@@ -9,8 +9,8 @@ using std::vector;
 
 enum ops { ADD, MUL };
 
-long long evaluate(vector<long long> nums, vector<ops> operators) {
-    long long acc = nums.at(0);
+long evaluate(vector<long> nums, vector<ops> operators) {
+    long acc = nums.at(0);
     auto current_num = nums.begin();
     auto current_op = operators.begin();
     while (++current_num < nums.end()) {
@@ -57,7 +57,7 @@ struct OpGenerator {
     }
 };
 
-bool works(vector<long long> nums, long long value) {
+bool works(vector<long> nums, long value) {
     OpGenerator gen(nums.size() - 1);
     vector<ops> operators;
     
@@ -73,8 +73,8 @@ int main (int argc, char *argv[]) {
     std::ifstream input(argv[1]);
     std::string s;
 
-    vector<vector<long long>> numbers;
-    vector<long long> values;
+    vector<vector<long>> numbers;
+    vector<long> values;
 
     while (std::getline(input, s)) {
         std::stringstream stream(s);
@@ -89,14 +89,14 @@ int main (int argc, char *argv[]) {
         numbers.back().pop_back();
     }
 
-    long long acc = 0;
+    long acc = 0;
     for (size_t x = 0; x < numbers.size(); ++x) {
         if (works(numbers.at(x), values.at(x))) {
             acc += values.at(x);
         }
     }
 
-    std::printf("Solution: %lld!\n", acc);
+    std::printf("Solution: %ld!\n", acc);
 
     return 0;
 }
