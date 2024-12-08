@@ -6,8 +6,6 @@ class Grid:
         self.values = [list(line) for line in v.split("\n")[:-1]]
         self.X = len(self.values[0])
         self.Y = len(self.values)
-        print(f"{self.X=}")
-        print(f"{self.Y=}")
 
     def at(self, coord: ndarray) -> str:
         if coord[0] < 0 or coord[1] < 0:
@@ -78,16 +76,5 @@ class Grid:
         return sum((self.xmas_origin(array((x, y))) for x in range(self.X) for y in range(self.Y)))
 
     def all_xmas2(self) -> int:
-        for y in range(self.Y):
-            for x in range(self.X):
-                center = self.xmas_center(array((x, y)))
-                if center:
-                    print(x, y, center)
         return sum((self.xmas_center(array((x, y))) for x in range(self.X) for y in range(self.Y)))
-
-
-if __name__ == "__main__":
-    g = Grid(open("../input.txt", "r").read())
-    print("Solution: {:d}!".format(g.all_xmas()))
-    print("Solution: {:d}!".format(g.all_xmas2()))
 
