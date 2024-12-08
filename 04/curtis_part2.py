@@ -1,6 +1,6 @@
 import sys
 
-from Grid import Grid
+from curtis_util import Grid
 
 
 if __name__ == "__main__":
