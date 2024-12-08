@@ -1,7 +1,6 @@
 #include <cassert>
 #include <cstdio>
 #include <fstream>
-#include <iterator>
 #include <unordered_set>
 
 #include "../06/curtis_grid.hpp"
@@ -12,7 +11,7 @@ vector<Vec2> antinodes(const Vec2 &a1, const Vec2 &a2) {
 }
 
 int main (int argc, char *argv[]) {
-    std::ifstream input("input.txt");
+    std::ifstream input(argv[1]);
     Grid grid(input);
 
     std::unordered_set<Vec2> points;

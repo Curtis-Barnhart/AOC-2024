@@ -20,7 +20,7 @@ vector<Vec2> antinodes(const Vec2 &a1, const Vec2 &a2, const Grid &g) {
 }
 
 int main (int argc, char *argv[]) {
-    std::ifstream input("input.txt");
+    std::ifstream input(argv[1]);
     Grid grid(input);
 
     std::unordered_set<Vec2> points;
