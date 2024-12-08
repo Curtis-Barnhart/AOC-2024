@@ -3,7 +3,7 @@
 #include <fstream>
 #include <unordered_set>
 
-#include "../Grid.hpp"
+#include "curtis_grid.hpp"
 
 struct Guard {
     Vec2 loc{0, 0}, face{0, 0};
@@ -27,7 +27,7 @@ struct Guard {
 template<>
 struct std::hash<Guard> {
     std::size_t operator()(const Guard &g) const {
-        return (std::hash<Vec2>{}(g.loc)  << (sizeof(std::size_t) / 2))
+        return (std::hash<Vec2>{}(g.loc) << (sizeof(std::size_t) / 2))
                 ^ std::hash<Vec2>{}(g.face);
     }
 };
@@ -58,30 +58,6 @@ bool creates_loop(const Grid &grid, Guard guard) {
 }
 
 int main (int argc, char *argv[]) {
-    std::ifstream ifs(argv[1]);
-    Grid grid(ifs);
-    Guard guard;
-    guard.loc = grid.first('^');
-    guard.face = {0, -1};
-    grid.at(guard.loc) = 'X';
-
-    // while (true) {
-    //     step_action:
-    //     Vec2 step = guard.loc + guard.face;
-    //     if (!grid.on_grid(step)) {
-    //         break;
-    //     }
-    //     if (grid.at(step) != '#') {
-    //         guard.loc = guard.loc + guard.face;
-    //         grid.at(guard.loc) = 'X';
-    //     } else {
-    //         guard.turn_right();
-    //         goto step_action;
-    //     }
-    // }
-
-    // printf("Solution: %d!\n", grid.count('X'));
-
     std::ifstream ifs2(argv[1]);
     Grid grid2(ifs2);
     Guard guard2;
@@ -92,14 +68,14 @@ int main (int argc, char *argv[]) {
     for (int x = 0; x < grid2.X; ++x) {
         for (int y = 0; y < grid2.Y; ++y) {
             if (grid2.at(x, y) != '#') {
-                std::printf("Starting (%d, %d)\n", x, y);
+                // std::printf("Starting (%d, %d)\n", x, y);
                 Grid test = grid2;
                 test.at(x, y) = '#';
                 if (creates_loop(test, guard2)) {
-                    std::printf("(%d, %d)\n", x, y);
+                    // std::printf("(%d, %d)\n", x, y);
                     ++acc;
                 }
-                std::printf("Finishing (%d, %d)\n", x, y);
+                // std::printf("Finishing (%d, %d)\n", x, y);
             }
         }
     }
