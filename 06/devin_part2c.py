@@ -24,15 +24,15 @@ m.walk()
 
 m.unregHandler(".")
 
-cycle = 0
+cycleCount = 0
 def checkForCycle(c, row, col):
     "check if a point, when changed to a barrier, will cause a cycle in the guard's walk"
-    global cycle
+    global cycleCount
     m.lines[row][col] = "#"
     if m.walk():
-        cycle += 1
+        cycleCount += 1
     m.lines[row][col] = "X"
 
 m.forAllDo("X", checkForCycle)
 
-print("%d steps and %d possible cycle"%(steps, cycle))
+print("%d steps and %d possible cycle"%(steps, cycleCount))
