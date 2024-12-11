@@ -1,8 +1,12 @@
 #include <cstdio>
 #include <fstream>
 #include <unordered_set>
+#include <ranges>
+#include <numeric>
 
 #include "../06/curtis_grid.hpp"
+
+using std::ranges::views::transform;
 
 int th_score(const Vec2 &th, const Grid &g) {
     std::unordered_set<Vec2> visited;
@@ -12,7 +16,7 @@ int th_score(const Vec2 &th, const Grid &g) {
     int score = 0;
 
     while (!stack.empty()) {
-        const Vec2 next = stack.back();
+        Vec2 next = stack.back();
         stack.pop_back();
 
         if (g.at(next) == '9') {
@@ -38,11 +42,9 @@ int main (int argc, char *argv[]) {
     std::ifstream input(argv[1]);
     Grid grid(input);
 
-    int score_sum = 0;
-    vector<Vec2> trailheads = grid.all('0');
-    for (const Vec2 &th : trailheads) {
-        score_sum += th_score(th, grid);
-    }
+    auto scores = grid.all('0')
+        | transform([&](const Vec2 &v) { return th_score(v, grid); });
+    int score_sum = std::accumulate(scores.begin(), scores.end(), 0);
 
     std::printf("Solution: %d!\n", score_sum);
     return 0;

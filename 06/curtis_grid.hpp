@@ -36,7 +36,6 @@ struct Vec2 {
         Vec2 rd{1, -1}, ld{-1, -1}, lu{-1, 1}, ru{1, 1};
         while (radius) {
             Vec2 start{this->x, this->y + radius};
-            neighbors.emplace_back(start);
             for (int e = radius; e--> 0;) {
                 start = start + rd;
                 neighbors.emplace_back(start);

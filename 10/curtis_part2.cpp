@@ -1,9 +1,12 @@
 #include <cstdio>
 #include <fstream>
-#include <unordered_set>
+#include <numeric>
+#include <ranges>
 
 #include "../06/curtis_grid.hpp"
 
+using std::ranges::views::filter;
+using std::ranges::views::transform;
 
 /*
 * This could be memoized for extra speed
@@ -14,28 +17,21 @@ int tile_rating(const Vec2 &tile, const Grid &grid) {
         return 1;
     }
 
-    int rating_new = 0;
-    const vector<Vec2> neighbors_new = grid.filter_on_grid(tile.near_taxicab());
-    std::unordered_set<Vec2> set_new(neighbors_new.begin(), neighbors_new.end());
-
-    for (const Vec2 &n : set_new) {
-        if (grid.at(n) - grid.at(tile) == 1) {
-            rating_new += tile_rating(n, grid);
-        }
-    }
-
-    return rating_new;
+    std::unordered_map<Vec2, int> map_fil;
+    auto filtered = tile.near_taxicab()
+        | filter([&](const Vec2 &v) { return grid.on_grid(v); })
+        | filter([&](const Vec2 &v) { return grid.at(v) - grid.at(tile) == 1; })
+        | transform([&](const Vec2 &v) { return tile_rating(v, grid); });
+    return std::accumulate(filtered.begin(), filtered.end(), 0);
 }
 
 int main (int argc, char *argv[]) {
     std::ifstream input(argv[1]);
     Grid grid(input);
 
-    int score_sum = 0;
-    vector<Vec2> trailheads = grid.all('0');
-    for (const Vec2 &th : trailheads) {
-        score_sum += tile_rating(th, grid);
-    }
+    auto scores = grid.all('0')
+        | transform([&](const Vec2 &v) { return tile_rating(v, grid); });
+    int score_sum = std::accumulate(scores.begin(), scores.end(), 0);
 
     std::printf("Solution: %d!\n", score_sum);
     return 0;
