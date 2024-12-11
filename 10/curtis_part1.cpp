@@ -4,23 +4,6 @@
 
 #include "../06/curtis_grid.hpp"
 
-vector<Vec2> valid_neighbors(const Vec2 &loc, const Grid &g) {
-    vector<Vec2> neighbors;
-    if (g.on_grid(loc + Vec2(1, 0))) {
-        neighbors.push_back(loc + Vec2(1, 0));
-    }
-    if (g.on_grid(loc + Vec2(0, 1))) {
-        neighbors.push_back(loc + Vec2(0, 1));
-    }
-    if (g.on_grid(loc + Vec2(-1, 0))) {
-        neighbors.push_back(loc + Vec2(-1, 0));
-    }
-    if (g.on_grid(loc + Vec2(0, -1))) {
-        neighbors.push_back(loc + Vec2(0, -1));
-    }
-    return neighbors;
-}
-
 int th_score(const Vec2 &th, const Grid &g) {
     std::unordered_set<Vec2> visited;
     vector<Vec2> stack;
@@ -29,13 +12,13 @@ int th_score(const Vec2 &th, const Grid &g) {
     int score = 0;
 
     while (!stack.empty()) {
-        Vec2 next = stack.back();
+        const Vec2 next = stack.back();
         stack.pop_back();
 
         if (g.at(next) == '9') {
             ++score;
         } else {
-            vector<Vec2> neighbors = valid_neighbors(next, g);
+            vector<Vec2> neighbors = g.filter_on_grid(next.near_taxicab());
             for (const Vec2 &n : neighbors) {
                 if (
                     visited.find(n) == visited.end()

@@ -1,5 +1,6 @@
 #include <cmath>
 #include <cstddef>
+#include <cstdlib>
 #include <functional>
 #include <istream>
 #include <stdexcept>
@@ -19,8 +20,60 @@ struct Vec2 {
     Vec2 operator*(const int s) const { return {s*x, s*y}; }
     int dot(const Vec2 &o) const { return x*o.x + y*o.y; }
     double norm() const { return std::sqrt(x*x + y*y); }
-    double distance(const Vec2 &o) const {return (o - *this).norm(); }
+    double distance(const Vec2 &o) const { return (o - *this).norm(); }
+    int taxicab(const Vec2 &o=Vec2::origin) const { return std::abs(x - o.x) + std::abs(y - o.y); }
+
+    vector<Vec2> near_taxicab(int radius=1, bool contain_self=false) const {
+        vector<Vec2> neighbors;
+        if (contain_self) {
+            neighbors.reserve((radius + 1) * (radius) / 2 + 1);
+            neighbors.push_back(*this);
+        } else {
+            neighbors.reserve((radius + 1) * (radius) / 2);
+        }
+
+        radius = std::abs(radius);
+        Vec2 rd{1, -1}, ld{-1, -1}, lu{-1, 1}, ru{1, 1};
+        while (radius) {
+            Vec2 start{this->x, this->y + radius};
+            neighbors.emplace_back(start);
+            for (int e = radius; e--> 0;) {
+                start = start + rd;
+                neighbors.emplace_back(start);
+            }
+            for (int e = radius; e--> 0;) {
+                start = start + ld;
+                neighbors.emplace_back(start);
+            }
+            for (int e = radius; e--> 0;) {
+                start = start + lu;
+                neighbors.emplace_back(start);
+            }
+            for (int e = radius; e--> 0;) {
+                start = start + ru;
+                neighbors.emplace_back(start);
+            }
+            --radius;
+        }
+        return neighbors;
+    }
+
+    vector<Vec2> near_square(int radius=1) {
+        vector<Vec2> neighbors;
+        neighbors.reserve((2 * radius + 1) * (2 * radius + 1));
+        for (int x = this->x - radius; x <= this->x + radius; ++x) {
+            for (int y = this->y - radius; y <= this->y + radius; ++x) {
+                neighbors.emplace_back(x, y);
+            }
+        }
+        return neighbors;
+    }
+
+    const static Vec2 origin;
+
 };
+// yeah uh I'll remove this one day
+const Vec2 Vec2::origin{0, 0};
 
 template<>
 struct std::hash<Vec2> {
@@ -41,13 +94,12 @@ struct Grid {
             for (const char &c : line) {
                 this->values.back().push_back(c);
             }
-        }
-        this->Y = this->values.size();
-        this->X = this->values.back().size();
-        for (vector<char> &v : this->values) {
-            v.shrink_to_fit();
+            this->values.back().shrink_to_fit();
         }
         this->values.shrink_to_fit();
+
+        this->Y = this->values.size();
+        this->X = this->values.back().size();
     }
 
     const char &at(const Vec2 &v) const {
@@ -80,7 +132,35 @@ struct Grid {
         return (x < this->X && x >= 0 && y < this->Y && y >= 0);
     }
 
-    Vec2 first(char c) {
+    vector<Vec2> filter_on_grid(vector<Vec2> &&locations) const {
+        vector<Vec2>::iterator reader = locations.begin(),
+                               writer = reader;
+        while (reader < locations.end()) {
+            if (this->on_grid(*reader)) {
+                *writer++ = *reader++;
+            } else {
+                ++reader;
+            }
+        }
+        locations.erase(writer, locations.end());
+        return locations;
+    }
+
+    vector<Vec2> &filter_on_grid(vector<Vec2> &locations) const {
+        vector<Vec2>::iterator reader = locations.begin(),
+                               writer = reader;
+        while (reader < locations.end()) {
+            if (this->on_grid(*reader)) {
+                *writer++ = *reader++;
+            } else {
+                ++reader;
+            }
+        }
+        locations.erase(writer, locations.end());
+        return locations;
+    }
+
+    Vec2 first(char c) const {
         for (int x = 0; x < this->X; ++x) {
             for (int y = 0; y < this->Y; ++y) {
                 if (this->at(x, y) == c) {
@@ -91,8 +171,9 @@ struct Grid {
         return {-1, -1};
     }
 
-    vector<Vec2> all(char c) {
+    vector<Vec2> all(char c) const {
         vector<Vec2> instances;
+        instances.reserve(this->X * this->Y);
         for (int x = 0; x < this->X; ++x) {
             for (int y = 0; y < this->Y; ++y) {
                 if (this->at(x, y) == c) {
@@ -100,10 +181,25 @@ struct Grid {
                 }
             }
         }
+        instances.shrink_to_fit();
         return instances;
     }
+    
+    template<typename F>
+    vector<Vec2> select_where(F &&lambda) const {
+        vector<Vec2> vecs;
+        vecs.reserve(this->X * this->Y);
+        for (int x = 0; x < this->X; ++x) {
+            for (int y = 0; y < this->Y; ++y) {
+                if (lambda(Vec2(x, y))) {
+                    vecs.emplace_back(x, y);
+                }
+            }
+        }
+        vecs.shrink_to_fit();
+    }
 
-    int count(char c) {
+    int count(char c) const {
         int acc = 0;
         for (int x = 0; x < this->X; ++x) {
             for (int y = 0; y < this->Y; ++y) {
