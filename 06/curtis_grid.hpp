@@ -1,12 +1,18 @@
+#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
 #include <functional>
 #include <istream>
+#include <numeric>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 #include <vector>
+#include <ranges>
 
+using std::ranges::views::filter;
+using std::ranges::views::transform;
 using std::vector;
 
 struct Vec2 {
@@ -26,9 +32,11 @@ struct Vec2 {
     vector<Vec2> near_taxicab(int radius=1, bool contain_self=false) const {
         vector<Vec2> neighbors;
         if (contain_self) {
+            // TODO: is this correct?
             neighbors.reserve((radius + 1) * (radius) / 2 + 1);
             neighbors.push_back(*this);
         } else {
+            // TODO: is this correct?
             neighbors.reserve((radius + 1) * (radius) / 2);
         }
 
@@ -58,6 +66,7 @@ struct Vec2 {
     }
 
     vector<Vec2> near_square(int radius=1) {
+        // TODO: add way to delete self
         vector<Vec2> neighbors;
         neighbors.reserve((2 * radius + 1) * (2 * radius + 1));
         for (int x = this->x - radius; x <= this->x + radius; ++x) {
@@ -78,6 +87,69 @@ template<>
 struct std::hash<Vec2> {
     std::size_t operator()(const Vec2 &v) const {
         return (v.x << (sizeof(std::size_t) / 2)) ^ v.y;
+    }
+};
+
+struct Border {
+    enum ORIENTATION { VERT, HORI };
+    Vec2 begin = Vec2::origin, end = Vec2::origin;
+    ORIENTATION orientation;
+
+    Border(const Vec2 &v, ORIENTATION o) : begin(v), orientation(o) {}
+    Border(const Vec2 &v1, const Vec2 &v2) {
+        assert(v1.x == v2.x || v1.y == v2.y);
+        assert(v1.x != v2.x || v1.y != v2.y);
+        if (v1.x == v2.x) {
+            assert(std::abs(v1.y - v2.y) == 1);
+            begin = v1.y < v2.y ? v1 : v2;
+            orientation = HORI;
+        } else {
+            begin = v1.x < v2.x ? v1 : v2;
+            orientation = HORI;
+        }
+    }
+
+    bool can_combine(const Border &b) const {
+        if (b.orientation != this->orientation) {
+            return false;
+        }
+        if (this->orientation == VERT) {
+            
+        } else {
+
+        }
+    }
+};
+
+struct Region {
+    std::unordered_set<Vec2> locations;
+
+    template<typename C>
+    Region(C container) {
+        this->locations = {container.begin(), container.end()};
+    }
+
+    int size() const {
+        return locations.size();
+    }
+
+    /*
+    * rewrite to transform again.
+    */
+    int perimeter() const {
+        int p = 0;
+        for (const Vec2 &v : this->locations) {
+            auto sides = v.near_taxicab()
+                | filter([&](const Vec2 &n){ return !this->locations.contains(n); })
+                | transform([&](const Vec2 &n){ return 1; });
+            p += std::accumulate(sides.begin(), sides.end(), 0);
+        }
+
+        return p;
+    }
+
+    bool contains(const Vec2 &v) const {
+        return this->locations.contains(v);
     }
 };
 
@@ -196,6 +268,29 @@ struct Grid {
             }
         }
         vecs.shrink_to_fit();
+    }
+
+    Region region(const Vec2 &v) const {
+        assert(this->on_grid(v));
+
+        vector<Vec2> stack;
+        std::unordered_set<Vec2> counted;
+
+        stack.push_back(v);
+        counted.insert(v);
+        while (!stack.empty()) {
+            Vec2 current = stack.back();
+            stack.pop_back();
+
+            auto neighs = current.near_taxicab()
+                | filter([&](const Vec2 &n){ return this->on_grid(n); })
+                | filter([&](const Vec2 &n){ return !counted.contains(n); })
+                | filter([&](const Vec2 &n){ return this->at(n) == this->at(v); });
+            stack.insert(stack.end(), neighs.begin(), neighs.end());
+            counted.insert(neighs.begin(), neighs.end());
+        }
+
+        return {counted};
     }
 
     int count(char c) const {
