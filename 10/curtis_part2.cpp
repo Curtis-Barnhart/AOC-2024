@@ -19,9 +19,9 @@ int tile_rating(const Vec2 &tile, const Grid &grid) {
 
     std::unordered_map<Vec2, int> map_fil;
     auto filtered = tile.near_taxicab()
-        | filter([&](const Vec2 &v) { return grid.on_grid(v); })
-        | filter([&](const Vec2 &v) { return grid.at(v) - grid.at(tile) == 1; })
-        | transform([&](const Vec2 &v) { return tile_rating(v, grid); });
+        | filter([&](const Vec2 &v){ return grid.on_grid(v); })
+        | filter([&](const Vec2 &v){ return grid.at(v) - grid.at(tile) == 1; })
+        | transform([&](const Vec2 &v){ return tile_rating(v, grid); });
     return std::accumulate(filtered.begin(), filtered.end(), 0);
 }
 
@@ -30,7 +30,7 @@ int main (int argc, char *argv[]) {
     Grid grid(input);
 
     auto scores = grid.all('0')
-        | transform([&](const Vec2 &v) { return tile_rating(v, grid); });
+        | transform([&](const Vec2 &v){ return tile_rating(v, grid); });
     int score_sum = std::accumulate(scores.begin(), scores.end(), 0);
 
     std::printf("Solution: %d!\n", score_sum);
