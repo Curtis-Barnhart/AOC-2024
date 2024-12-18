@@ -67,8 +67,7 @@ void simulate(
 
 int main (int argc, char *argv[]) {
     std::vector<int> code { 2,4,1,5,7,5,1,6,0,3,4,1,5,5,3,0 }, out;
-    // simulate(code, out, 44374556);
-    simulate(code, out, 105981155568026);
+    simulate(code, out, 44374556);
 
     std::printf("Solution: ");
     for (auto begin = out.begin(); begin < std::prev(out.end()); ++begin) {
