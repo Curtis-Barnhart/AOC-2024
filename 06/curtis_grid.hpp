@@ -1,13 +1,16 @@
 #include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <cstdio>
 #include <cstdlib>
 #include <functional>
 #include <istream>
 #include <numeric>
+#include <queue>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 #include <ranges>
 
@@ -124,8 +127,10 @@ struct Border {
 struct Region {
     std::unordered_set<Vec2> locations;
 
+    Region() {}
+
     template<typename C>
-    Region(C container) {
+    explicit Region(C container) {
         this->locations = {container.begin(), container.end()};
     }
 
@@ -158,7 +163,23 @@ struct Grid {
     int X, Y;
     vector<vector<char>> values;
 
-    Grid(std::istream &i) {
+    explicit Grid(int size, char fill = ' ') : Grid(size, size, fill) {}
+
+    explicit Grid(int size_x, int size_y, char fill = ' ') {
+        this->X = size_x;
+        this->Y = size_y;
+        this->values.reserve(size_y);
+        while (size_y-->0) {
+            this->values.emplace_back();
+            this->values.back().reserve(size_x);
+            int x_cp = size_x;
+            while (x_cp-->0) {
+                this->values.back().emplace_back(fill);
+            }
+        }
+    }
+
+    explicit Grid(std::istream &i) {
         std::string line;
         while (std::getline(i, line)) {
             this->values.emplace_back();
@@ -179,7 +200,7 @@ struct Grid {
 
     const char &at(int x, int y) const {
         if (x >= this->X || y >= this->Y) {
-            throw std::out_of_range("nope");
+            throw std::out_of_range("Grid access out of range.");
         }
         return this->values.at(y).at(x);
     }
@@ -190,7 +211,7 @@ struct Grid {
 
     char &at(int x, int y) {
         if (x >= this->X || y >= this->Y) {
-            throw std::out_of_range("nope");
+            throw std::out_of_range("Grid access out of range.");
         }
         return this->values.at(y).at(x);
     }
@@ -290,8 +311,80 @@ struct Grid {
             counted.insert(neighs.begin(), neighs.end());
         }
 
-        return {counted};
+        return Region(counted);
     }
+
+    std::optional<vector<Vec2>> path_shortest_breadth(
+        const Vec2 &src,
+        const Vec2 &dst,
+        const vector<char> &wall_types
+    ) const {
+        assert(this->on_grid(src));
+        assert(this->on_grid(dst));
+
+        std::unordered_map<Vec2, Vec2> path_links;
+        path_links.reserve(this->X * this->Y);
+
+        Grid visited = *this;
+        for (char t : wall_types) {
+            for (const Vec2 &v : this->all(t)) {
+                visited.at(v) = '-';
+            }
+        }
+
+        std::queue<Vec2> frontier;
+        frontier.push(src);
+        visited.at(src) = '-';
+
+        while (!frontier.empty()) {
+            Vec2 cur = frontier.front();
+            frontier.pop();
+
+            if (cur == dst) {
+                vector<Vec2> path{dst};
+                path.reserve((src - dst).taxicab());
+
+                Vec2 trail = dst;
+                while (path_links.contains(trail)) {
+                    path.push_back(path_links.at(trail));
+                    trail = path.back();
+                }
+
+                return {std::move(path)};
+            } else {
+                for (const Vec2 &neigh : cur.near_taxicab()
+                    | filter([&](const Vec2 &v){ return this->on_grid(v); })
+                    | filter([&](const Vec2 &v){ return visited.at(v) != '-'; })
+                ) {
+                    visited.at(neigh) = '-';
+                    path_links.insert({neigh, cur});
+                    frontier.push(neigh);
+                }
+            }
+        }
+
+        return {};
+    }
+
+    // Region path_shortest(
+    //     const Vec2 &src,
+    //     const Vec2 &dst,
+    //     const std::unordered_set<char> &wall_types
+    // ) {
+    //     struct Vec2Cost {
+    //         Vec2 v;
+    //         int cost;
+    //     };
+
+    //     struct CostEstimate {
+    //         bool operator()(const Vec2Cost &v1, const Vec2Cost &v2) const {
+    //             return v1.cost < v2.cost;
+    //         }
+    //     };
+
+    //     std::priority_queue<Vec2Cost, vector<Vec2Cost>, CostEstimate> heap(CostEstimate{});
+    //     heap.push({src, (dst - src).taxicab()});
+    // }
 
     int count(char c) const {
         int acc = 0;
