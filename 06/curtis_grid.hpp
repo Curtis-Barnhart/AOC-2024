@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstddef>
@@ -5,9 +6,10 @@
 #include <cstdlib>
 #include <functional>
 #include <istream>
+#include <iterator>
+#include <list>
 #include <numeric>
 #include <queue>
-#include <stdexcept>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -42,8 +44,7 @@ struct Vec2 {
             // TODO: is this correct?
             neighbors.reserve((radius + 1) * (radius) / 2);
         }
-
-        radius = std::abs(radius);
+radius = std::abs(radius);
         Vec2 rd{1, -1}, ld{-1, -1}, lu{-1, 1}, ru{1, 1};
         while (radius) {
             Vec2 start{this->x, this->y + radius};
@@ -83,8 +84,6 @@ struct Vec2 {
     const static Vec2 origin;
 
 };
-// yeah uh I'll remove this one day
-const Vec2 Vec2::origin{0, 0};
 
 template<>
 struct std::hash<Vec2> {
@@ -94,32 +93,87 @@ struct std::hash<Vec2> {
 };
 
 struct Border {
-    enum ORIENTATION { VERT, HORI };
-    Vec2 begin = Vec2::origin, end = Vec2::origin;
-    ORIENTATION orientation;
+    Vec2 begin, end;
 
-    Border(const Vec2 &v, ORIENTATION o) : begin(v), orientation(o) {}
-    Border(const Vec2 &v1, const Vec2 &v2) {
+    Border(const Vec2 &v1, const Vec2 &v2) : begin(v1), end(v2) {
         assert(v1.x == v2.x || v1.y == v2.y);
         assert(v1.x != v2.x || v1.y != v2.y);
-        if (v1.x == v2.x) {
-            assert(std::abs(v1.y - v2.y) == 1);
-            begin = v1.y < v2.y ? v1 : v2;
-            orientation = HORI;
-        } else {
-            begin = v1.x < v2.x ? v1 : v2;
-            orientation = HORI;
-        }
     }
 
-    bool can_combine(const Border &b) const {
-        if (b.orientation != this->orientation) {
-            return false;
-        }
-        if (this->orientation == VERT) {
-            
-        } else {
+    /*
+     * This is only guaranteed to work if the Borders have valid values
+     */
+    std::optional<Border> combine(const Border &b) const {
+        bool this_y_aligned = (this->begin.y == this->end.y);
+        bool other_y_aligned = (b.begin.y == b.end.y);
+        bool this_sign_pos, other_sign_pos;
+        int min_begin, min_end, max_begin, max_end;
+        int t_begin, t_end, o_begin, o_end;
 
+        // This first section will check if the borders are orthogonal to each other
+        // If they are, we end. If not, we move on to check...
+        if (this_y_aligned && other_y_aligned && (this->begin.y == b.begin.y)) {
+            this_sign_pos = (this->end.x - this->begin.x) > 0;
+            other_sign_pos = (b.end.x - b.begin.x) > 0;
+            t_begin = this->begin.x, t_end = this->end.x;
+            o_begin = b.begin.x, o_end = b.end.x;
+        } else if (!this_y_aligned && !other_y_aligned && (this->begin.x == b.begin.x)) {
+            this_sign_pos = (this->end.y - this->begin.y) > 0;
+            other_sign_pos = (b.end.y - b.begin.y) > 0;
+            t_begin = this->begin.y, t_end = this->end.y;
+            o_begin = b.begin.y, o_end = b.end.y;
+        } else {
+            // the borders aren't even on the same axis - too bad
+            return {};
+        }
+
+        // ...if they are facing the same direction on that same axis
+        // If they are, we also test if there is overlap between the borders
+        if (this_sign_pos && other_sign_pos) {
+            if (t_begin < o_begin) {
+                min_begin = t_begin, min_end = t_end;
+                max_begin = o_begin, max_end = o_end;
+            } else {
+                min_begin = o_begin, min_end = o_end;
+                max_begin = t_begin, max_end = t_end;
+            }
+
+            if (max_begin > min_end) {
+                // they are aligned on the same axis and direction, but no overlap
+                return {};
+            }
+        } else if (!this_sign_pos && !other_sign_pos) {
+            if (t_begin > o_begin) {
+                min_begin = t_begin, min_end = t_end;
+                max_begin = o_begin, max_end = o_end;
+            } else {
+                min_begin = o_begin, min_end = o_end;
+                max_begin = t_begin, max_end = t_end;
+            }
+
+            if (max_begin < min_end) {
+                // they are aligned on the same axis and direction, but no overlap
+                return {};
+            }
+        } else {
+            // Even though they are aligned on the same axis,
+            // the borders go in opposite directions
+            return {};
+        }
+
+        // If there is overlap, then we return a new border object
+        if (this_y_aligned) {
+            if (this_sign_pos) {
+                return {Border{{min_begin, this->begin.y}, {std::max(min_end, max_end), this->begin.y}}};
+            } else {
+                return {Border{{min_begin, this->begin.y}, {std::min(min_end, max_end), this->begin.y}}};
+            }
+        } else {
+            if (this_sign_pos) {
+                return {Border{{this->begin.x, min_begin}, {this->begin.x, std::max(min_end, max_end)}}};
+            } else {
+                return {Border{{this->begin.x, min_begin}, {this->begin.x, std::min(min_end, max_end)}}};
+            }
         }
     }
 };
@@ -130,9 +184,7 @@ struct Region {
     Region() {}
 
     template<typename C>
-    explicit Region(C container) {
-        this->locations = {container.begin(), container.end()};
-    }
+    explicit Region(C container) : locations(container.begin(), container.end()) {}
 
     int size() const {
         return locations.size();
@@ -140,6 +192,7 @@ struct Region {
 
     /*
     * rewrite to transform again.
+    * TODO: lol there is a much better way to find a perimeter lolll
     */
     int perimeter() const {
         int p = 0;
@@ -151,6 +204,58 @@ struct Region {
         }
 
         return p;
+    }
+
+    // TODO: this is possibly one of the worst ways to find the sides lol
+    int sides() const {
+        std::list<Border> borders;
+        // first get every individual border into the list
+        for (const Vec2 &v : this->locations) {
+            if (!this->locations.contains(v + Vec2{1, 0}))  {
+                borders.emplace_back(v, v + Vec2{0, -1});
+            }
+            if (!this->locations.contains(v + Vec2{0, 1}))  {
+                borders.emplace_back(v, v + Vec2{1, 0});
+            }
+            if (!this->locations.contains(v + Vec2{-1, 0}))  {
+                borders.emplace_back(v, v + Vec2{0, 1});
+            }
+            if (!this->locations.contains(v + Vec2{0, -1}))  {
+                borders.emplace_back(v, v + Vec2{-1, 0});
+            }
+        }
+
+        // then we start combining them with each other from the front on
+        std::list<Border>::iterator combine_attempt = borders.begin();
+        while (combine_attempt != borders.end()) {
+        try_to_combine:
+            for (
+                auto combine_with = std::next(combine_attempt);
+                combine_with != borders.end();
+                std::advance(combine_with, 1)
+            ) {
+                std::optional<Border> combined = combine_attempt->combine(*combine_with);
+                if (combined) {
+                    if (combine_attempt != borders.begin()) {
+                        auto temp = std::prev(combine_attempt);
+                        borders.erase(combine_attempt);
+                        borders.erase(combine_with);
+                        borders.push_back(*combined);
+                        combine_attempt = temp;
+                    } else {
+                        borders.erase(combine_attempt);
+                        borders.erase(combine_with);
+                        borders.push_back(*combined);
+                        combine_attempt = borders.begin();
+                        goto try_to_combine;
+                    }
+                    break;
+                }
+            }
+            std::advance(combine_attempt, 1);
+        }
+
+        return borders.size();
     }
 
     bool contains(const Vec2 &v) const {
@@ -365,26 +470,6 @@ struct Grid {
 
         return {};
     }
-
-    // Region path_shortest(
-    //     const Vec2 &src,
-    //     const Vec2 &dst,
-    //     const std::unordered_set<char> &wall_types
-    // ) {
-    //     struct Vec2Cost {
-    //         Vec2 v;
-    //         int cost;
-    //     };
-
-    //     struct CostEstimate {
-    //         bool operator()(const Vec2Cost &v1, const Vec2Cost &v2) const {
-    //             return v1.cost < v2.cost;
-    //         }
-    //     };
-
-    //     std::priority_queue<Vec2Cost, vector<Vec2Cost>, CostEstimate> heap(CostEstimate{});
-    //     heap.push({src, (dst - src).taxicab()});
-    // }
 
     int count(char c) const {
         int acc = 0;
